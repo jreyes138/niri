@@ -1,0 +1,528 @@
+#!/bin/bash
+# niri-theme — switch between color themes for niri + wezterm + waybar + system
+# Usage: niri-theme <theme-name>
+# Themes: gruvbox-dark, catppuccin-mocha, nord, tokyo-night
+#         (partial matches allowed: gruvbox, catppuccin, mocha, nord, tokyo)
+
+set -euo pipefail
+
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
+NIRI_CONFIG="$CONFIG_DIR/niri/config.kdl"
+WEZTERM_CONFIG="$HOME/.wezterm.lua"
+WAYBAR_CSS="$CONFIG_DIR/waybar/style.css"
+FUZZEL_INI="$CONFIG_DIR/fuzzel/fuzzel.ini"
+MAKO_CONF="$CONFIG_DIR/mako/config"
+SWAYLOCK_CONF="$CONFIG_DIR/swaylock/config"
+WLOGOUT_CSS="$CONFIG_DIR/wlogout/style.css"
+WALLPAPER_DIR="$HOME/Pictures/wallpapers"
+
+# ── Theme definitions ─────────────────────────────────────────────────────
+declare -A THEMES
+THEME_NAMES="gruvbox-dark catppuccin-mocha nord tokyo-night"
+
+# Each theme defines:
+#   bg        - main background
+#   bg_alt    - secondary background (panels, borders)
+#   fg        - main foreground text
+#   fg_dim    - dimmed text
+#   accent    - accent/highlight color
+#   green     - success/battery
+#   yellow    - warning/brightness
+#   red       - critical/danger
+#   blue      - info/bluetooth
+#   purple    - power profiles
+#   wezterm   - wezterm color_scheme name
+#   gtk_theme - GTK theme (gsettings)
+#   icon_theme - icon theme (gsettings)
+#   wallpaper - wallpaper filename in ~/Pictures/wallpapers
+
+# ── Gruvbox Dark ───────────────────────────────────────────────────────────
+declare -A gruvbox_dark=(
+    [bg]="#282828" [bg_alt]="#3c3836" [bg_dark]="#1d2021"
+    [fg]="#ebdbb2" [fg_dim]="#a89984"
+    [accent]="#d79921" [green]="#689d6a" [yellow]="#fabd2f"
+    [red]="#fb4934" [blue]="#458588" [purple]="#b16286"
+    [wezterm]="Gruvbox Dark"
+    [gtk_theme]="adw-gtk3-dark" [icon_theme]="Gruvbox-Plus-Dark"
+    [wallpaper]="gruvbox-dark.png"
+)
+
+# ── Catppuccin Mocha ───────────────────────────────────────────────────────
+declare -A catppuccin_mocha=(
+    [bg]="#1e1e2e" [bg_alt]="#313244" [bg_dark]="#181825"
+    [fg]="#cdd6f4" [fg_dim]="#a6adc8"
+    [accent]="#cba6f7" [green]="#a6e3a1" [yellow]="#f9e2af"
+    [red]="#f38ba8" [blue]="#89b4fa" [purple]="#cba6f7"
+    [wezterm]="Catppuccin Mocha"
+    [gtk_theme]="adw-gtk3-dark" [icon_theme]="Gruvbox-Plus-Dark"
+    [wallpaper]="catppuccin-mocha.png"
+)
+
+# ── Nord ──────────────────────────────────────────────────────────────────
+declare -A nord=(
+    [bg]="#2e3440" [bg_alt]="#3b4252" [bg_dark]="#1e222a"
+    [fg]="#e5e9f0" [fg_dim]="#81a1c1"
+    [accent]="#88c0d0" [green]="#a3be8c" [yellow]="#ebcb8b"
+    [red]="#bf616a" [blue]="#81a1c1" [purple]="#b48ead"
+    [wezterm]="Nord (Gogh)"
+    [gtk_theme]="adw-gtk3-dark" [icon_theme]="Gruvbox-Plus-Dark"
+    [wallpaper]="nord.png"
+)
+
+# ── Tokyo Night ────────────────────────────────────────────────────────────
+declare -A tokyo_night=(
+    [bg]="#1a1b26" [bg_alt]="#24283b" [bg_dark]="#16161e"
+    [fg]="#c0caf5" [fg_dim]="#565f89"
+    [accent]="#7aa2f7" [green]="#9ece6a" [yellow]="#e0af68"
+    [red]="#f7768e" [blue]="#7aa2f7" [purple]="#bb9af7"
+    [wezterm]="Tokyo Night"
+    [gtk_theme]="adw-gtk3-dark" [icon_theme]="Gruvbox-Plus-Dark"
+    [wallpaper]="tokyo-night.png"
+)
+
+# ── Helper: get theme by name (partial match) ──────────────────────────────
+get_theme() {
+    local input="$1"
+    case "$input" in
+        *gruvbox*|*Gruvbox*) echo "gruvbox_dark" ;;
+        *catppuccin*|*mocha*|*Catppuccin*|*Mocha*) echo "catppuccin_mocha" ;;
+        *nord*|*Nord*) echo "nord" ;;
+        *tokyo*|*Tokyo*) echo "tokyo_night" ;;
+        *) return 1 ;;
+    esac
+}
+
+# ── Color format helpers ──────────────────────────────────────────────────
+# Convert #rrggbb to hex without #
+strip_hash() { echo "${1#\#}"; }
+
+# Convert #rrggbb to rgba(r,g,b,a) for CSS
+hex_to_rgba() {
+    local hex="$1" alpha="${2:-1.0}"
+    local r=$((16#${hex:1:2}))
+    local g=$((16#${hex:3:2}))
+    local b=$((16#${hex:5:2}))
+    echo "rgba($r, $g, $b, $alpha)"
+}
+
+# ── Apply theme to niri config ─────────────────────────────────────────────
+apply_niri() {
+    local -n t="$1"
+    local config="$NIRI_CONFIG"
+    local tmp; tmp=$(mktemp)
+
+    # Replace focus-ring, border colors, and background-color
+    sed -e "s/active-color \"#[0-9a-fA-F]*\"/active-color \"${t[accent]}\"/g" \
+        -e "s/inactive-color \"#[0-9a-fA-F]*\"/inactive-color \"${t[bg_alt]}\"/g" \
+        -e "s/urgent-color \"#[0-9a-fA-F]*\"/urgent-color \"${t[red]}\"/g" \
+        -e "s/background-color \"[^\"]*\"/background-color \"${t[bg_dark]}\"/" \
+        "$config" > "$tmp"
+
+    mv "$tmp" "$config"
+}
+
+# ── Apply theme to wezterm ─────────────────────────────────────────────────
+apply_wezterm() {
+    local -n t="$1"
+    local config="$WEZTERM_CONFIG"
+    local tmp; tmp=$(mktemp)
+
+    # Replace the color_scheme line
+    sed "s/color_scheme = \"[^\"]*\"/color_scheme = \"${t[wezterm]}\"/" \
+        "$config" > "$tmp"
+
+    mv "$tmp" "$config"
+}
+
+# ── Apply theme to waybar CSS ───────────────────────────────────────────────
+apply_waybar() {
+    local -n t="$1"
+
+    cat > "$WAYBAR_CSS" << WAYBAR_EOF
+/* Auto-generated by niri-theme — do not edit manually */
+* {
+    font-family: "JetBrains Mono", "FiraCode Nerd Font", monospace;
+    font-size: 12px;
+}
+
+window#waybar {
+    background-color: transparent;
+    color: ${t[fg]};
+    border-bottom: none;
+}
+
+#workspaces button {
+    padding: 0 8px;
+    background-color: transparent;
+    color: ${t[fg_dim]};
+    border-radius: 6px;
+    margin: 2px 1px;
+}
+
+#workspaces button.active {
+    background-color: $(hex_to_rgba "${t[accent]}" 0.85);
+    color: ${t[bg]};
+    font-weight: bold;
+}
+
+#workspaces button.urgent {
+    background-color: $(hex_to_rgba "${t[red]}" 0.85);
+    color: ${t[bg]};
+}
+
+#workspaces button:hover {
+    background-color: $(hex_to_rgba "${t[bg_alt]}" 0.85);
+    color: ${t[fg]};
+}
+
+#clock {
+    background-color: $(hex_to_rgba "${t[bg_alt]}" 0.85);
+    color: ${t[accent]};
+    padding: 0 10px;
+    border-radius: 6px;
+    margin: 2px 1px;
+}
+
+#network {
+    background-color: $(hex_to_rgba "${t[bg_alt]}" 0.85);
+    color: ${t[blue]};
+    padding: 0 8px;
+    border-radius: 6px;
+    margin: 2px 1px;
+}
+
+#bluetooth {
+    background-color: $(hex_to_rgba "${t[bg_alt]}" 0.85);
+    color: ${t[blue]};
+    padding: 0 8px;
+    border-radius: 6px;
+    margin: 2px 1px;
+}
+
+#bluetooth.connected {
+    color: ${t[green]};
+}
+
+#pulseaudio {
+    background-color: $(hex_to_rgba "${t[bg_alt]}" 0.85);
+    color: ${t[green]};
+    padding: 0 10px;
+    border-radius: 6px;
+    margin: 2px 1px;
+}
+
+#backlight {
+    background-color: $(hex_to_rgba "${t[bg_alt]}" 0.85);
+    color: ${t[yellow]};
+    padding: 0 10px;
+    border-radius: 6px;
+    margin: 2px 1px;
+}
+
+#battery {
+    background-color: $(hex_to_rgba "${t[bg_alt]}" 0.85);
+    color: ${t[green]};
+    padding: 0 10px;
+    border-radius: 6px;
+    margin: 2px 1px;
+}
+
+#battery.warning {
+    color: ${t[yellow]};
+}
+
+#battery.critical {
+    color: ${t[red]};
+}
+
+#battery.charging {
+    color: ${t[green]};
+}
+
+#power-profiles-daemon {
+    background-color: $(hex_to_rgba "${t[bg_alt]}" 0.85);
+    color: ${t[purple]};
+    padding: 0 8px;
+    border-radius: 6px;
+    margin: 2px 1px;
+}
+
+#power-profiles-daemon.balanced {
+    color: ${t[accent]};
+}
+
+#power-profiles-daemon.performance {
+    color: ${t[red]};
+}
+
+#power-profiles-daemon.power-saver {
+    color: ${t[green]};
+}
+
+#tray {
+    background-color: $(hex_to_rgba "${t[bg_alt]}" 0.85);
+    padding: 0 6px;
+    border-radius: 6px;
+    margin: 2px 1px;
+}
+
+#tray menu {
+    background-color: $(hex_to_rgba "${t[bg]}" 0.95);
+    color: ${t[fg]};
+    border: 1px solid ${t[bg_alt]};
+    border-radius: 6px;
+}
+WAYBAR_EOF
+}
+
+# ── Apply theme to fuzzel ──────────────────────────────────────────────────
+apply_fuzzel() {
+    local -n t="$1"
+
+    cat > "$FUZZEL_INI" << FUZZEL_EOF
+[main]
+font=JetBrains Mono:size=12
+prompt="❯ "
+icon-theme=${t[icon_theme]}
+terminal=wezterm -e
+lines=15
+width=40
+horizontal-pad=12
+vertical-pad=12
+inner-pad=4
+
+[colors]
+background=$(strip_hash "${t[bg]}")f0
+text=$(strip_hash "${t[fg]}")ff
+match=$(strip_hash "${t[accent]}")ff
+selection=$(strip_hash "${t[bg_alt]}")ff
+selection-text=$(strip_hash "${t[fg]}")ff
+border=$(strip_hash "${t[accent]}")ff
+selection-match=$(strip_hash "${t[accent]}")ff
+
+[border]
+width=2
+radius=8
+FUZZEL_EOF
+}
+
+# ── Apply theme to mako ─────────────────────────────────────────────────────
+apply_mako() {
+    local -n t="$1"
+
+    cat > "$MAKO_CONF" << MAKO_EOF
+# Auto-generated by niri-theme
+font=JetBrains Mono 12
+background-color=${t[bg]}
+text-color=${t[fg]}
+border-color=${t[accent]}
+border-size=2
+border-radius=8
+margin=10
+padding=10
+width=400
+height=100
+default-timeout=5000
+ignore-timeout=false
+
+[urgency=low]
+border-color=${t[green]}
+default-timeout=3000
+
+[urgency=normal]
+border-color=${t[accent]}
+default-timeout=5000
+
+[urgency=critical]
+border-color=${t[red]}
+default-timeout=0
+background-color=${t[bg_dark]}
+text-color=${t[red]}
+MAKO_EOF
+}
+
+# ── Apply theme to swaylock ─────────────────────────────────────────────────
+apply_swaylock() {
+    local -n t="$1"
+
+    cat > "$SWAYLOCK_CONF" << SWAYLOCK_EOF
+# Auto-generated by niri-theme
+
+ignore-empty-password
+show-failed-attempts
+
+color=${t[bg]}
+inside-color=${t[bg]}
+ring-color=${t[bg_alt]}
+key-hl-color=${t[accent]}
+bs-hl-color=${t[red]}
+inside-ver-color=${t[blue]}
+ring-ver-color=${t[blue]}
+inside-wrong-color=${t[red]}
+ring-wrong-color=${t[red]}
+line-color=${t[bg]}
+separator-color=${t[bg]}
+text-color=${t[fg]}
+text-caps-lock-color=${t[accent]}
+
+indicator-radius=100
+indicator-thickness=6
+font=JetBrains Mono
+SWAYLOCK_EOF
+}
+
+# ── Apply theme to wlogout CSS ──────────────────────────────────────────────
+apply_wlogout() {
+    local -n t="$1"
+
+    cat > "$WLOGOUT_CSS" << WLOGOUT_EOF
+/* Auto-generated by niri-theme */
+window {
+    background-color: $(hex_to_rgba "${t[bg]}" 0.9);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+}
+
+button {
+    background-color: ${t[bg_alt]};
+    color: ${t[fg]};
+    border: 2px solid ${t[bg_alt]};
+    border-radius: 12px;
+    margin: 10px;
+    padding: 20px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 25%;
+}
+
+button:hover {
+    background-color: ${t[bg_alt]};
+    border-color: ${t[accent]};
+    color: ${t[accent]};
+}
+
+button:active {
+    background-color: ${t[accent]};
+    color: ${t[bg]};
+}
+
+#lock {
+    background-image: image(url("${t[icon_theme_dir]:-/usr/share/icons/${t[icon_theme]}}/symbolic/changes-prevent-symbolic.svg"));
+}
+#logout {
+    background-image: image(url("/usr/share/icons/${t[icon_theme]}/symbolic/system-log-out-symbolic.svg"));
+}
+#shutdown {
+    background-image: image(url("/usr/share/icons/${t[icon_theme]}/symbolic/system-shutdown-symbolic.svg"));
+}
+#restart {
+    background-image: image(url("/usr/share/icons/${t[icon_theme]}/symbolic/view-refresh-symbolic.svg"));
+}
+#suspend {
+    background-image: image(url("/usr/share/icons/${t[icon_theme]}/symbolic/media-playback-pause-symbolic.svg"));
+}
+#hibernate {
+    background-image: image(url("/usr/share/icons/${t[icon_theme]}/symbolic/weather-snow-symbolic.svg"));
+}
+#cancel {
+    background-image: image(url("/usr/share/icons/${t[icon_theme]}/symbolic/window-close-symbolic.svg"));
+}
+WLOGOUT_EOF
+}
+
+# ── Apply theme to gsettings (GTK, icons, color scheme) ─────────────────────
+apply_gsettings() {
+    local -n t="$1"
+
+    gsettings set org.gnome.desktop.interface gtk-theme "${t[gtk_theme]}"
+    gsettings set org.gnome.desktop.interface icon-theme "${t[icon_theme]}"
+    gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
+}
+
+# ── Apply wallpaper ──────────────────────────────────────────────────────────
+apply_wallpaper() {
+    local -n t="$1"
+    local wp="$WALLPAPER_DIR/${t[wallpaper]}"
+
+    if [ ! -f "$wp" ]; then
+        echo "WARNING: wallpaper $wp not found, skipping"
+        return
+    fi
+
+    # Kill existing swaybg (match the binary name exactly)
+    pkill -x swaybg 2>/dev/null || true
+    sleep 0.3
+
+    # Start new swaybg fully detached from this script
+    setsid /usr/bin/swaybg -i "$wp" -m fill >/dev/null 2>&1 &
+}
+
+# ── Main ────────────────────────────────────────────────────────────────────
+main() {
+    if [ $# -eq 0 ]; then
+        echo "Usage: niri-theme <theme-name>"
+        echo "Themes: $THEME_NAMES"
+        echo "  (partial matches allowed: gruvbox, catppuccin, mocha, nord, tokyo)"
+        echo ""
+        echo "Current themes available:"
+        for name in $THEME_NAMES; do
+            echo "  - $name"
+        done
+        return 1
+    fi
+
+    local theme_var
+    theme_var=$(get_theme "$1") || {
+        echo "ERROR: unknown theme '$1'"
+        echo "Available: $THEME_NAMES"
+        return 1
+    }
+
+    echo "Switching to theme: $theme_var"
+
+    # Apply to all components
+    echo "  niri config..."
+    apply_niri "$theme_var"
+
+    echo "  wezterm..."
+    apply_wezterm "$theme_var"
+
+    echo "  waybar..."
+    apply_waybar "$theme_var"
+
+    echo "  fuzzel..."
+    apply_fuzzel "$theme_var"
+
+    echo "  mako..."
+    apply_mako "$theme_var"
+
+    echo "  swaylock..."
+    apply_swaylock "$theme_var"
+
+    echo "  wlogout..."
+    apply_wlogout "$theme_var"
+
+    echo "  gsettings (GTK/icons)..."
+    apply_gsettings "$theme_var"
+
+    echo "  wallpaper..."
+    apply_wallpaper "$theme_var"
+
+    # Reload mako
+    makoctl reload 2>/dev/null || true
+
+    # Restart waybar (full restart needed for config changes)
+    pkill -x waybar 2>/dev/null || true
+    sleep 0.3
+    setsid /usr/bin/waybar >/dev/null 2>&1 &
+
+    # Notify
+    notify-send -a "niri-theme" "Theme Switched" "Applied $theme_var" 2>/dev/null || true
+
+    echo ""
+    echo "Done. Theme '$theme_var' applied."
+    echo "wezterm will pick up the change on next config reload (Ctrl+Shift+R or restart)."
+    echo "niri config will reload automatically (live config)."
+}
+
+main "$@"
