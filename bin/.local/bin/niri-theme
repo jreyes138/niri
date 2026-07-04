@@ -3,6 +3,11 @@
 # Usage: niri-theme <theme-name>
 # Themes: gruvbox-dark, catppuccin-mocha, nord, tokyo-night
 #         (partial matches allowed: gruvbox, catppuccin, mocha, nord, tokyo)
+#
+# Components themed:
+#   niri config, wezterm, waybar, fuzzel, mako, swaylock, wlogout,
+#   GTK (gsettings), wallpaper (swaybg),
+#   cursor theme, libadwaita accent-color, TTY/vtrgb, nvim, SwayOSD
 
 set -euo pipefail
 
@@ -34,7 +39,7 @@ THEME_NAMES="gruvbox-dark catppuccin-mocha nord tokyo-night"
 #   wezterm   - wezterm color_scheme name
 #   gtk_theme - GTK theme (gsettings)
 #   icon_theme - icon theme (gsettings)
-#   wallpaper - wallpaper filename in ~/Pictures/wallpapers
+#   wallpaper_dir - subdirectory in ~/Pictures/wallpapers with multiple wallpapers
 
 # ── Gruvbox Dark ───────────────────────────────────────────────────────────
 declare -A gruvbox_dark=(
@@ -44,7 +49,9 @@ declare -A gruvbox_dark=(
     [red]="#fb4934" [blue]="#458588" [purple]="#b16286"
     [wezterm]="Gruvbox Dark"
     [gtk_theme]="adw-gtk3-dark" [icon_theme]="Gruvbox-Plus-Dark"
-    [wallpaper]="gruvbox-dark.png"
+    [wallpaper_dir]="gruvbox-dark"
+    [cursor]="Bibata-Modern-Amber" [accent_color]="yellow"
+    [vtrgb]="gruvbox" [nvim_scheme]="gruvbox"
 )
 
 # ── Catppuccin Mocha ───────────────────────────────────────────────────────
@@ -55,7 +62,9 @@ declare -A catppuccin_mocha=(
     [red]="#f38ba8" [blue]="#89b4fa" [purple]="#cba6f7"
     [wezterm]="Catppuccin Mocha"
     [gtk_theme]="adw-gtk3-dark" [icon_theme]="Gruvbox-Plus-Dark"
-    [wallpaper]="catppuccin-mocha.png"
+    [wallpaper_dir]="catppuccin-mocha"
+    [cursor]="catppuccin-mocha-mauve-cursors" [accent_color]="purple"
+    [vtrgb]="catppuccin" [nvim_scheme]="catppuccin"
 )
 
 # ── Nord ──────────────────────────────────────────────────────────────────
@@ -66,7 +75,9 @@ declare -A nord=(
     [red]="#bf616a" [blue]="#81a1c1" [purple]="#b48ead"
     [wezterm]="Nord (Gogh)"
     [gtk_theme]="adw-gtk3-dark" [icon_theme]="Gruvbox-Plus-Dark"
-    [wallpaper]="nord.png"
+    [wallpaper_dir]="nord"
+    [cursor]="Nordzy-cursors" [accent_color]="blue"
+    [vtrgb]="nord" [nvim_scheme]="nord"
 )
 
 # ── Tokyo Night ────────────────────────────────────────────────────────────
@@ -77,7 +88,9 @@ declare -A tokyo_night=(
     [red]="#f7768e" [blue]="#7aa2f7" [purple]="#bb9af7"
     [wezterm]="Tokyo Night"
     [gtk_theme]="adw-gtk3-dark" [icon_theme]="Gruvbox-Plus-Dark"
-    [wallpaper]="tokyo-night.png"
+    [wallpaper_dir]="tokyo-night"
+    [cursor]="Bibata-Modern-TokyoNight" [accent_color]="blue"
+    [vtrgb]="tokyo" [nvim_scheme]="tokyonight"
 )
 
 # ── Helper: get theme by name (partial match) ──────────────────────────────
@@ -111,11 +124,12 @@ apply_niri() {
     local config="$NIRI_CONFIG"
     local tmp; tmp=$(mktemp)
 
-    # Replace focus-ring, border colors, and background-color
+    # Replace focus-ring, border colors, background-color, and xcursor-theme
     sed -e "s/active-color \"#[0-9a-fA-F]*\"/active-color \"${t[accent]}\"/g" \
         -e "s/inactive-color \"#[0-9a-fA-F]*\"/inactive-color \"${t[bg_alt]}\"/g" \
         -e "s/urgent-color \"#[0-9a-fA-F]*\"/urgent-color \"${t[red]}\"/g" \
         -e "s/background-color \"[^\"]*\"/background-color \"${t[bg_dark]}\"/" \
+        -e "s/xcursor-theme \"[^\"]*\"/xcursor-theme \"${t[cursor]}\"/" \
         "$config" > "$tmp"
 
     mv "$tmp" "$config"
@@ -536,16 +550,62 @@ apply_gsettings() {
     gsettings set org.gnome.desktop.interface gtk-theme "${t[gtk_theme]}"
     gsettings set org.gnome.desktop.interface icon-theme "${t[icon_theme]}"
     gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
+    gsettings set org.gnome.desktop.interface cursor-theme "${t[cursor]}"
+    gsettings set org.gnome.desktop.interface accent-color "${t[accent_color]}"
 }
 
 # ── Apply wallpaper ──────────────────────────────────────────────────────────
 apply_wallpaper() {
     local -n t="$1"
-    local wp="$WALLPAPER_DIR/${t[wallpaper]}"
+    local wp_dir="$WALLPAPER_DIR/${t[wallpaper_dir]}"
+    local state_file="$HOME/.cache/niri-theme-wallpaper-state"
 
-    if [ ! -f "$wp" ]; then
-        echo "WARNING: wallpaper $wp not found, skipping"
+    if [ ! -d "$wp_dir" ]; then
+        echo "WARNING: wallpaper directory $wp_dir not found, skipping"
         return
+    fi
+
+    # List all image files in the theme directory
+    local wallpapers=()
+    while IFS= read -r line; do
+        wallpapers+=("$line")
+    done < <(find "$wp_dir" -maxdepth 1 -type f \( -name '*.png' -o -name '*.jpg' \) -print | sort)
+
+    if [ ${#wallpapers[@]} -eq 0 ]; then
+        echo "WARNING: no wallpapers found in $wp_dir, skipping"
+        return
+    fi
+
+    # Pick a random wallpaper, avoiding the last one used for this theme
+    local last_used=""
+    if [ -f "$state_file" ]; then
+        last_used=$(grep "^${t[wallpaper_dir]}=" "$state_file" 2>/dev/null | cut -d= -f2- || true)
+    fi
+
+    local wp=""
+    if [ ${#wallpapers[@]} -eq 1 ]; then
+        wp="${wallpapers[0]}"
+    else
+        # Filter out the last used wallpaper
+        local candidates=()
+        for w in "${wallpapers[@]}"; do
+            if [ "$w" != "$last_used" ]; then
+                candidates+=("$w")
+            fi
+        done
+        if [ ${#candidates[@]} -eq 0 ]; then
+            candidates=("${wallpapers[@]}")
+        fi
+        # Random pick
+        wp="${candidates[RANDOM % ${#candidates[@]}]}"
+    fi
+
+    # Save state
+    mkdir -p "$(dirname "$state_file")"
+    if grep -q "^${t[wallpaper_dir]}=" "$state_file" 2>/dev/null; then
+        sed -i "s|^${t[wallpaper_dir]}=.*|${t[wallpaper_dir]}=$wp|" "$state_file"
+    else
+        echo "${t[wallpaper_dir]}=$wp" >> "$state_file"
     fi
 
     # Kill existing swaybg (match the binary name exactly)
@@ -554,6 +614,90 @@ apply_wallpaper() {
 
     # Start new swaybg fully detached from this script
     setsid /usr/bin/swaybg -i "$wp" -m fill >/dev/null 2>&1 &
+
+    # Update niri config spawn-at-startup line to match the selected wallpaper
+    if grep -q 'spawn-at-startup "swaybg"' "$NIRI_CONFIG" 2>/dev/null; then
+        sed -i "s|spawn-at-startup \"swaybg\".*|spawn-at-startup \"swaybg\" \"-i\" \"$wp\" \"-m\" \"fill\"|" "$NIRI_CONFIG"
+    fi
+
+    echo "  (wallpaper: $(basename "$wp"))"
+}
+
+# ── Apply theme to TTY/vtrgb ────────────────────────────────────────────────
+apply_vtrgb() {
+    local -n t="$1"
+    local vtrgb_file="/etc/vtrgb-${t[vtrgb]}"
+
+    if [ ! -f "$vtrgb_file" ]; then
+        echo "  WARNING: vtrgb file $vtrgb_file not found, skipping"
+        return
+    fi
+
+    # Copy the palette file and apply it
+    sudo -n cp "$vtrgb_file" /etc/vtrgb 2>/dev/null && \
+        sudo -n setvtrgb /etc/vtrgb 2>/dev/null || \
+        echo "  WARNING: could not apply vtrgb (needs sudo)"
+}
+
+# ── Apply theme to nvim ─────────────────────────────────────────────────────
+apply_nvim() {
+    local -n t="$1"
+    local nvim_theme_file="$CONFIG_DIR/nvim/lua/theme.lua"
+
+    mkdir -p "$(dirname "$nvim_theme_file")"
+    cat > "$nvim_theme_file" << NVIM_EOF
+-- This file is auto-generated by niri-theme — do not edit manually
+return { colorscheme = "${t[nvim_scheme]}" }
+NVIM_EOF
+}
+
+# ── Apply theme to SwayOSD ──────────────────────────────────────────────────
+apply_swayosd() {
+    local -n t="$1"
+    local swayosd_css="/etc/xdg/swayosd/style.css"
+
+    # SwayOSD uses GTK CSS with @theme references, so we write a custom
+    # style sheet that matches the active theme colors
+    sudo -n tee "$swayosd_css" > /dev/null << SWAYOSD_EOF
+/* Auto-generated by niri-theme — do not edit manually */
+window#osd {
+  border-radius: 12px;
+  border: 2px solid ${t[accent]};
+  background: ${t[bg]};
+}
+window#osd #container {
+  margin: 12px;
+}
+window#osd image,
+window#osd label {
+  color: ${t[fg]};
+}
+window#osd progressbar:disabled,
+window#osd image:disabled {
+  opacity: 0.5;
+}
+window#osd progressbar,
+window#osd segmentedprogress {
+  min-height: 6px;
+  border-radius: 999px;
+  background: transparent;
+  border: none;
+}
+window#osd trough,
+window#osd segment {
+  min-height: inherit;
+  border-radius: inherit;
+  border: none;
+  background: ${t[bg_alt]};
+}
+window#osd progress,
+window#osd segment.active {
+  min-height: inherit;
+  border-radius: inherit;
+  border: none;
+  background: ${t[accent]};
+}
+SWAYOSD_EOF
 }
 
 # ── Main ────────────────────────────────────────────────────────────────────
@@ -601,11 +745,20 @@ main() {
     echo "  wlogout..."
     apply_wlogout "$theme_var"
 
-    echo "  gsettings (GTK/icons)..."
+    echo "  gsettings (GTK/icons/cursor/accent)..."
     apply_gsettings "$theme_var"
 
     echo "  wallpaper..."
     apply_wallpaper "$theme_var"
+
+    echo "  TTY/vtrgb..."
+    apply_vtrgb "$theme_var"
+
+    echo "  nvim..."
+    apply_nvim "$theme_var"
+
+    echo "  SwayOSD..."
+    apply_swayosd "$theme_var"
 
     # Reload mako
     makoctl reload 2>/dev/null || true
@@ -615,6 +768,11 @@ main() {
     sleep 0.3
     setsid /usr/bin/waybar >/dev/null 2>&1 &
 
+    # Reload SwayOSD if running
+    pkill -x swayosd-server 2>/dev/null || true
+    sleep 0.2
+    setsid /usr/bin/swayosd-server >/dev/null 2>&1 &
+
     # Notify
     notify-send -a "niri-theme" "Theme Switched" "Applied $theme_var" 2>/dev/null || true
 
@@ -622,6 +780,8 @@ main() {
     echo "Done. Theme '$theme_var' applied."
     echo "wezterm will pick up the change on next config reload (Ctrl+Shift+R or restart)."
     echo "niri config will reload automatically (live config)."
+    echo "nvim will pick up the theme on next launch."
+    echo "TTY colors applied immediately (active TTYs + future logins)."
 }
 
 main "$@"
