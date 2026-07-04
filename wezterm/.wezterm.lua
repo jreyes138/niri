@@ -77,7 +77,7 @@ return {
     { key = "v", mods = "CTRL",       action = act.PasteFrom("Clipboard") },
 
     { key = "t", mods = "CTRL|SHIFT", action = act.SpawnTab("CurrentPaneDomain") },
-    { key = "w", mods = "CTRL|SHIFT", action = act.CloseCurrentTab({ confirm = false }) },
+    { key = "c", mods = "ALT", action = act.CloseCurrentTab({ confirm = false }) },
     { key = "n", mods = "CTRL|SHIFT", action = act.SpawnWindow },
     { key = "q", mods = "CTRL|SHIFT", action = act.QuitApplication },
 
