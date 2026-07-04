@@ -34,8 +34,3 @@
     "text": "Hibernate",
     "keybind": "h"
 }
-{
-    "label": "cancel",
-    "text": "Cancel",
-    "keybind": "Esc"
-}

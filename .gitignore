@@ -18,3 +18,11 @@ Thumbs.db
 
 # Generated files
 *.log
+
+# Backups
+*.bak
+*.bak-*
+
+# SSH keys
+id_*
+known_hosts

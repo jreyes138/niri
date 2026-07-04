@@ -5,7 +5,12 @@
 // ── Environment ─────────────────────────────────────────────────────────────
 environment {
     XDG_CURRENT_DESKTOP "niri"
-    QT_QPA_PLATFORM "wayland"
+    QT_QPA_PLATFORM "wayland;xcb"
+    GDK_BACKEND "wayland,x11"
+    MOZ_ENABLE_WAYLAND "1"
+    _JAVA_AWT_WM_NONREPARENTING "1"
+    QT_AUTO_SCREEN_SCALE_FACTOR "1"
+    QT_ENABLE_HIGHDPI_SCALING "1"
     ELECTRON_OZONE_PLATFORM_HINT "auto"
 }
 
@@ -226,6 +231,8 @@ binds {
     Mod+D hotkey-overlay-title="App Launcher: fuzzel" { spawn "fuzzel"; }
     Mod+Shift+Return hotkey-overlay-title="Terminal: wezterm" { spawn "wezterm"; }
     Mod+E hotkey-overlay-title="File Manager: yazi" { spawn "wezterm" "start" "--class" "org.wezfurlong.wezterm" "-e" "y"; }
+    Mod+B hotkey-overlay-title="Browser: Brave" { spawn "brave-browser"; }
+    Mod+N hotkey-overlay-title="Mail: Tuta" { spawn "flatpak" "run" "com.tutanota.Tutanota"; }
 
     // ── Clipboard history (cliphist via fuzzel) ───────────────────────
     Mod+V { spawn-sh "cliphist list | fuzzel -d --prompt='📋 ' | cliphist decode | wl-copy"; }

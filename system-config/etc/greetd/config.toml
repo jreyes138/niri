@@ -1,0 +1,6 @@
+[terminal]
+vt = 1
+
+[default_session]
+command = "tuigreet --debug /tmp/tuigreet.log --time --time-format '%Y-%m-%d %H:%M' --remember --remember-user-session --greeting 'Welcome back' --greet-align center --asterisks --asterisks-char '*' --window-padding 2 --container-padding 2 --prompt-padding 1 --theme 'text=white;border=blue;title=yellow;greet=lightyellow;prompt=lightgreen;input=lightblue;time=lightmagenta;action=cyan;button=lightred;container=black'"
+user = "greetd"

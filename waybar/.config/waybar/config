@@ -1,3 +1,5 @@
+
+
 {
     "layer": "top",
     "position": "top",
@@ -13,7 +15,7 @@
     },
 
     "clock": {
-        "format": " {:%H:%M  %Y-%m-%d}",
+        "format": " {:%I:%M %p  %Y-%m-%d}",
         "tooltip-format": "<tt>{calendar}</tt>",
         "on-click": "wlogout"
     },
