@@ -569,7 +569,7 @@ apply_wallpaper() {
     local wallpapers=()
     while IFS= read -r line; do
         wallpapers+=("$line")
-    done < <(find "$wp_dir" -maxdepth 1 -type f \( -name '*.png' -o -name '*.jpg' \) -print | sort)
+    done < <(find -L "$wp_dir" -maxdepth 1 -type f \( -name '*.png' -o -name '*.jpg' \) -print | sort)
 
     if [ ${#wallpapers[@]} -eq 0 ]; then
         echo "WARNING: no wallpapers found in $wp_dir, skipping"
