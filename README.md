@@ -30,7 +30,7 @@ cd ~/dotfiles
 | git | .gitconfig | Git config |
 | bin | .local/bin/{niri-theme,y} | Scripts: theme switcher, yazi wrapper |
 | fonts | .local/share/fonts/ | FiraCode Nerd Font (bundled) |
-| wallpapers | Pictures/wallpapers/ | Theme wallpapers (gruvbox, catppuccin, nord, tokyo-night) |
+| wallpapers | Pictures/wallpapers/ | Per-theme wallpaper directories (gruvbox-dark, catppuccin-mocha, nord, tokyo-night) with multiple curated wallpapers each |
 | dconf | .config/gsettings-*.txt | GSettings dump for replication |
 
 ### System-level configs (opt-in via --system)
@@ -84,7 +84,9 @@ network-manager-applet, tesseract, tuned, tuned-ppd
 ## Themes
 
 `niri-theme` script switches between gruvbox-dark, catppuccin-mocha, nord, and tokyo-night.
-It updates niri config, wezterm, waybar CSS, fuzzel, mako, swaylock, wlogout, and wallpaper.
+It updates niri config, wezterm, waybar CSS, fuzzel, mako, swaylock, wlogout, wallpaper,
+cursor, accent-color, TTY/vtrgb, nvim, and SwayOSD. Wallpapers rotate randomly from
+per-theme directories on each switch.
 
 In niri: Mod+Ctrl+1-4 (1=gruvbox, 2=catppuccin, 3=nord, 4=tokyo-night)
 
