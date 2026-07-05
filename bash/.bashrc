@@ -108,7 +108,7 @@ unset rc
 
 # ── Aliases ──────────────────────────────────────────────────────────────────
 alias ls="eza --color=always --long --git --no-filesize --icons=always --no-time --no-user --no-permissions"
-alias update='sudo dnf update -y --refresh && flatpak update -y'
+alias update='sudo dnf update -y --refresh && flatpak update -y && niri-post-update-check'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias grep='grep --color=auto'

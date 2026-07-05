@@ -3,19 +3,19 @@
 ignore-empty-password
 show-failed-attempts
 
-color=#282828
-inside-color=#282828
-ring-color=#3c3836
-key-hl-color=#d79921
-bs-hl-color=#fb4934
-inside-ver-color=#458588
-ring-ver-color=#458588
-inside-wrong-color=#fb4934
-ring-wrong-color=#fb4934
-line-color=#282828
-separator-color=#282828
-text-color=#ebdbb2
-text-caps-lock-color=#d79921
+color=#1e1e2e
+inside-color=#1e1e2e
+ring-color=#313244
+key-hl-color=#cba6f7
+bs-hl-color=#f38ba8
+inside-ver-color=#89b4fa
+ring-ver-color=#89b4fa
+inside-wrong-color=#f38ba8
+ring-wrong-color=#f38ba8
+line-color=#1e1e2e
+separator-color=#1e1e2e
+text-color=#cdd6f4
+text-caps-lock-color=#cba6f7
 
 indicator-radius=100
 indicator-thickness=6
