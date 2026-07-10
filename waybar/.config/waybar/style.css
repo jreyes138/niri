@@ -6,128 +6,128 @@
 
 window#waybar {
     background-color: transparent;
-    color: #cdd6f4;
+    color: #ebdbb2;
     border-bottom: none;
 }
 
 #workspaces button {
     padding: 0 8px;
     background-color: transparent;
-    color: #a6adc8;
+    color: #a89984;
     border-radius: 6px;
     margin: 2px 1px;
 }
 
 #workspaces button.active {
-    background-color: rgba(203, 166, 247, 0.85);
-    color: #1e1e2e;
+    background-color: rgba(215, 153, 33, 0.85);
+    color: #282828;
     font-weight: bold;
 }
 
 #workspaces button.urgent {
-    background-color: rgba(243, 139, 168, 0.85);
-    color: #1e1e2e;
+    background-color: rgba(251, 73, 52, 0.85);
+    color: #282828;
 }
 
 #workspaces button:hover {
-    background-color: rgba(49, 50, 68, 0.85);
-    color: #cdd6f4;
+    background-color: rgba(60, 56, 54, 0.85);
+    color: #ebdbb2;
 }
 
 #clock {
-    background-color: rgba(49, 50, 68, 0.85);
-    color: #cba6f7;
+    background-color: rgba(60, 56, 54, 0.85);
+    color: #d79921;
     padding: 0 10px;
     border-radius: 6px;
     margin: 2px 1px;
 }
 
 #network {
-    background-color: rgba(49, 50, 68, 0.85);
-    color: #89b4fa;
+    background-color: rgba(60, 56, 54, 0.85);
+    color: #458588;
     padding: 0 8px;
     border-radius: 6px;
     margin: 2px 1px;
 }
 
 #bluetooth {
-    background-color: rgba(49, 50, 68, 0.85);
-    color: #89b4fa;
+    background-color: rgba(60, 56, 54, 0.85);
+    color: #458588;
     padding: 0 8px;
     border-radius: 6px;
     margin: 2px 1px;
 }
 
 #bluetooth.connected {
-    color: #a6e3a1;
+    color: #689d6a;
 }
 
 #pulseaudio {
-    background-color: rgba(49, 50, 68, 0.85);
-    color: #a6e3a1;
+    background-color: rgba(60, 56, 54, 0.85);
+    color: #689d6a;
     padding: 0 10px;
     border-radius: 6px;
     margin: 2px 1px;
 }
 
 #backlight {
-    background-color: rgba(49, 50, 68, 0.85);
-    color: #f9e2af;
+    background-color: rgba(60, 56, 54, 0.85);
+    color: #fabd2f;
     padding: 0 10px;
     border-radius: 6px;
     margin: 2px 1px;
 }
 
 #battery {
-    background-color: rgba(49, 50, 68, 0.85);
-    color: #a6e3a1;
+    background-color: rgba(60, 56, 54, 0.85);
+    color: #689d6a;
     padding: 0 10px;
     border-radius: 6px;
     margin: 2px 1px;
 }
 
 #battery.warning {
-    color: #f9e2af;
+    color: #fabd2f;
 }
 
 #battery.critical {
-    color: #f38ba8;
+    color: #fb4934;
 }
 
 #battery.charging {
-    color: #a6e3a1;
+    color: #689d6a;
 }
 
 #power-profiles-daemon {
-    background-color: rgba(49, 50, 68, 0.85);
-    color: #cba6f7;
+    background-color: rgba(60, 56, 54, 0.85);
+    color: #b16286;
     padding: 0 8px;
     border-radius: 6px;
     margin: 2px 1px;
 }
 
 #power-profiles-daemon.balanced {
-    color: #cba6f7;
+    color: #d79921;
 }
 
 #power-profiles-daemon.performance {
-    color: #f38ba8;
+    color: #fb4934;
 }
 
 #power-profiles-daemon.power-saver {
-    color: #a6e3a1;
+    color: #689d6a;
 }
 
 #tray {
-    background-color: rgba(49, 50, 68, 0.85);
+    background-color: rgba(60, 56, 54, 0.85);
     padding: 0 6px;
     border-radius: 6px;
     margin: 2px 1px;
 }
 
 #tray menu {
-    background-color: rgba(30, 30, 46, 0.95);
-    color: #cdd6f4;
-    border: 1px solid #313244;
+    background-color: rgba(40, 40, 40, 0.95);
+    color: #ebdbb2;
+    border: 1px solid #3c3836;
     border-radius: 6px;
 }

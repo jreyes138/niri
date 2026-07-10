@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Yazi
+Comment=Terminal file manager
+Exec=wezterm start --class yazi -e yazi %f
+Icon=system-file-manager
+Terminal=false
+Categories=System;FileManager;Utility;
+MimeType=inode/directory;
