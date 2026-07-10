@@ -25,7 +25,8 @@ cd ~/dotfiles
 | wlogout | .config/wlogout/{layout,style.css} | Logout menu |
 | wlogout-icons | .local/share/wlogout/icons/ | Custom Gruvbox SVG icons for wlogout |
 | xdg-desktop-portal | .config/xdg-desktop-portal/niri-portals.conf | Portal config (gnome+gtk backends) |
-| yazi | .config/yazi/yazi.toml | File manager config |
+| yazi | .config/yazi/yazi.toml, .local/share/applications/yazi.desktop | File manager config + xdg-open .desktop file |
+| mimeapps | .config/mimeapps.list | Default app associations (yazi for dirs, okular for PDF, brave for http, nvim for txt) |
 | bash | .bashrc, .bash_profile | Shell config (Gruvbox PS1, fzf+fd integration) |
 | git | .gitconfig | Git config |
 | bin | .local/bin/{niri-theme,y} | Scripts: theme switcher, yazi wrapper |
@@ -95,21 +96,21 @@ In niri: Mod+Ctrl+1-4 (1=gruvbox, 2=catppuccin, 3=nord, 4=tokyo-night)
 Install (symlink dotfiles into $HOME):
 ```bash
 cd ~/dotfiles
-stow niri waybar wezterm fuzzel mako swaylock wlogout yazi bash git bin \
+stow niri waybar wezterm fuzzel mako swaylock wlogout yazi mimeapps bash git bin \
   xdg-desktop-portal wallpapers fonts wlogout-icons dconf
 ```
 
 Uninstall:
 ```bash
 cd ~/dotfiles
-stow -D niri waybar wezterm fuzzel mako swaylock wlogout yazi bash git bin \
+stow -D niri waybar wezterm fuzzel mako swaylock wlogout yazi mimeapps bash git bin \
   xdg-desktop-portal wallpapers fonts wlogout-icons dconf
 ```
 
 Restow (after pulling changes):
 ```bash
 cd ~/dotfiles
-stow -R niri waybar wezterm fuzzel mako swaylock wlogout yazi bash git bin \
+stow -R niri waybar wezterm fuzzel mako swaylock wlogout yazi mimeapps bash git bin \
   xdg-desktop-portal wallpapers fonts wlogout-icons dconf
 ```
 
