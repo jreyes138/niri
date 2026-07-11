@@ -97,21 +97,21 @@ Install (symlink dotfiles into $HOME):
 ```bash
 cd ~/dotfiles
 stow niri waybar wezterm fuzzel mako swaylock wlogout yazi mimeapps bash git bin \
-  xdg-desktop-portal wallpapers fonts wlogout-icons dconf
+  xdg-desktop-portal wallpapers fonts wlogout-icons dconf term-themes
 ```
 
 Uninstall:
 ```bash
 cd ~/dotfiles
 stow -D niri waybar wezterm fuzzel mako swaylock wlogout yazi mimeapps bash git bin \
-  xdg-desktop-portal wallpapers fonts wlogout-icons dconf
+  xdg-desktop-portal wallpapers fonts wlogout-icons dconf term-themes
 ```
 
 Restow (after pulling changes):
 ```bash
 cd ~/dotfiles
 stow -R niri waybar wezterm fuzzel mako swaylock wlogout yazi mimeapps bash git bin \
-  xdg-desktop-portal wallpapers fonts wlogout-icons dconf
+  xdg-desktop-portal wallpapers fonts wlogout-icons dconf term-themes
 ```
 
 ## Keybindings (niri)

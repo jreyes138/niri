@@ -1,0 +1,8 @@
+#!/bin/bash
+# gnome-calendar-float — launches gnome-calendar and forces it floating
+# gnome-calendar calls gtk_window_maximize() which overrides niri's
+# open-floating window rule. This wrapper waits for the window to map,
+# then toggles it to floating.
+gnome-calendar &
+sleep 2
+niri msg action toggle-window-floating

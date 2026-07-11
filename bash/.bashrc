@@ -53,7 +53,8 @@ fi
 export PATH
 
 # ── Bat ( better cat ) ───────────────────────────────────────────────────────
-export BAT_THEME="gruvbox-dark"
+# BAT_THEME is set by ~/.config/bat/config (managed by niri-theme)
+# Do NOT hardcode BAT_THEME here — it would override the bat config file.
 
 # ── FZF ──────────────────────────────────────────────────────────────────────
 show_file_or_dir_preview="if [ -d {} ]; then eza --tree --color=always {} | head -200; else bat -n --color=always --line-range :500 {}; fi"

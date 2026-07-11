@@ -4,22 +4,16 @@
 
 // ── Environment ─────────────────────────────────────────────────────────────
 environment {
-    XDG_CURRENT_DESKTOP "niri"
-    QT_QPA_PLATFORM "wayland;xcb"
-    GDK_BACKEND "wayland,x11"
-    MOZ_ENABLE_WAYLAND "1"
-    _JAVA_AWT_WM_NONREPARENTING "1"
-    QT_AUTO_SCREEN_SCALE_FACTOR "1"
-    QT_ENABLE_HIGHDPI_SCALING "1"
+    XDG_CURRENT_DESKTOP "niri:GNOME"
+    QT_QPA_PLATFORM "wayland"
     ELECTRON_OZONE_PLATFORM_HINT "auto"
 }
 
 // ── Input ───────────────────────────────────────────────────────────────────
 input {
     keyboard {
-        xkb {
-            // Inherits from org.freedesktop.locale1 if empty
-        }
+        xkb 
+
         numlock
         repeat-delay 250
         repeat-rate 50
@@ -30,8 +24,8 @@ input {
         natural-scroll
     }
 
-    mouse {
-    }
+    mouse 
+
 
     // Uncomment for focus-follows-mouse:
     // focus-follows-mouse max-scroll-amount="0%"
@@ -39,7 +33,7 @@ input {
 
 // ── Cursor ───────────────────────────────────────────────────────────────────
 cursor {
-    xcursor-theme "Adwaita"
+    xcursor-theme "Bibata-Modern-Amber"
     xcursor-size 24
     hide-when-typing
 }
@@ -51,8 +45,8 @@ cursor {
 
 // ── Layout ───────────────────────────────────────────────────────────────────
 layout {
-    gaps 10
-    background-color "#181825"
+    gaps 3
+    background-color "#1d2021"
 
     center-focused-column "never"
 
@@ -66,16 +60,17 @@ layout {
 
     focus-ring {
         width 3
-        active-color "#cba6f7"
-        inactive-color "#313244"
+        active-color "#d79921"
+        inactive-color "#3c3836"
     }
 
     border {
         off
+
         width 4
-        active-color "#cba6f7"
-        inactive-color "#313244"
-        urgent-color "#f38ba8"
+        active-color "#d79921"
+        inactive-color "#3c3836"
+        urgent-color "#fb4934"
     }
 
     shadow {
@@ -86,8 +81,7 @@ layout {
         color "#0007"
     }
 
-    struts {
-    }
+    struts 
 }
 
 // ── Overview ─────────────────────────────────────────────────────────────────
@@ -97,26 +91,24 @@ overview {
 
 // ── Gestures ─────────────────────────────────────────────────────────────────
 gestures {
-    hot-corners {
-        // off  // top-left hot corner triggers overview
-    }
+    hot-corners 
 }
 
 // ── Desktop shell startup ───────────────────────────────────────────────────
 spawn-at-startup "waybar"
-spawn-at-startup "swaybg" "-i" "/home/joser/Pictures/wallpapers/gruvbox-dark.png" "-m" "fill"
+spawn-at-startup "swaybg" "-i" "/home/joser/Pictures/wallpapers/gruvbox-dark/sunset-drive-forest.jpg" "-m" "fill"
 spawn-at-startup "mako"
 spawn-at-startup "swayidle" "-w" "timeout" "300" "swaylock -f" "timeout" "600" "niri msg action power-off-monitors" "before-sleep" "swaylock -f"
 spawn-at-startup "lxpolkit"
 spawn-at-startup "blueman-applet"
 spawn-at-startup "nm-applet" "--indicator"
+spawn-at-startup "swayosd-server"
 // Clipboard history (cliphist + wl-paste)
 spawn-at-startup "bash" "-c" "wl-paste --watch cliphist store &"
 // Note: xwayland-satellite is handled automatically by niri since 25.08.
 
-hotkey-overlay {
-    // skip-at-startup  // uncomment after learning keys
-}
+hotkey-overlay 
+
 
 prefer-no-csd
 
@@ -127,7 +119,7 @@ screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 // Cua agent cursor overlay — make it floating and invisible so it doesn't
 // create a black fullscreen tile in the layout.
 window-rule {
-    match title=r#"^Cua\.AgentCursorOverlay"#
+    match title=r"^Cua\.AgentCursorOverlay"
     open-floating true
     opacity 0.0
     draw-border-with-background false
@@ -143,7 +135,7 @@ window-rule {
 }
 
 window-rule {
-    match app-id=r#"^org\.wezfurlong\.wezterm$"#
+    match app-id=r"^org\.wezfurlong\.wezterm$"
     default-column-width { proportion 0.5; }
     geometry-corner-radius 8
     clip-to-geometry true
@@ -163,24 +155,17 @@ window-rule {
 
 // Floating windows for specific apps
 window-rule {
-    match app-id=r#"^fuzzel$"#
+    match app-id=r"^fuzzel$"
     open-floating true
 }
 
 window-rule {
-    match app-id=r#"^pavucontrol$"#
+    match app-id=r"^pavucontrol$"
     open-floating true
 }
 
 window-rule {
-    match app-id=r#"^org\.gnome\.Settings$"#
-    open-floating true
-}
-
-// Firefox PiP
-window-rule {
-    match app-id=r#"firefox$"#
-    match title="^Picture-in-Picture$"
+    match app-id=r"^org\.gnome\.Settings$"
     open-floating true
 }
 
@@ -201,7 +186,7 @@ animations {
     }
 
     horizontal-view-movement {
-        spring damping-ratio=0.80 stiffness=550 epsilon=0.0001
+        spring damping-ratio=0.8 stiffness=550 epsilon=0.0001
     }
 
     window-movement {
@@ -213,7 +198,7 @@ animations {
     }
 
     config-notification-open-close {
-        spring damping-ratio=0.90 stiffness=800 epsilon=0.0001
+        spring damping-ratio=0.9 stiffness=800 epsilon=0.0001
     }
 
     screenshot-ui-open {
@@ -241,13 +226,15 @@ binds {
     Mod+Q repeat=false { close-window; }
 
     // ── Focus navigation ──────────────────────────────────────────────
+    // focus-window-or-workspace-* navigates windows within a column AND
+    // crosses workspace boundaries — works in both normal and overview mode.
     Mod+Left  { focus-column-left; }
-    Mod+Down  { focus-window-down; }
-    Mod+Up    { focus-window-up; }
+    Mod+Down  { focus-window-or-workspace-down; }
+    Mod+Up    { focus-window-or-workspace-up; }
     Mod+Right { focus-column-right; }
     Mod+H     { focus-column-left; }
-    Mod+J     { focus-window-down; }
-    Mod+K     { focus-window-up; }
+    Mod+J     { focus-window-or-workspace-down; }
+    Mod+K     { focus-window-or-workspace-up; }
     Mod+L     { focus-column-right; }
 
     // ── Move windows ──────────────────────────────────────────────────
@@ -323,16 +310,16 @@ binds {
     // ── Volume / Media / Brightness ────────────────────────────────────
     XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+ -l 1.0"; }
     XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"; }
-    XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
-    XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
+    XF86AudioMute allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
+    XF86AudioMicMute allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
 
-    XF86AudioPlay  allow-when-locked=true { spawn-sh "playerctl play-pause"; }
-    XF86AudioStop  allow-when-locked=true { spawn-sh "playerctl stop"; }
-    XF86AudioPrev  allow-when-locked=true { spawn-sh "playerctl previous"; }
-    XF86AudioNext  allow-when-locked=true { spawn-sh "playerctl next"; }
+    XF86AudioPlay allow-when-locked=true { spawn-sh "playerctl play-pause"; }
+    XF86AudioStop allow-when-locked=true { spawn-sh "playerctl stop"; }
+    XF86AudioPrev allow-when-locked=true { spawn-sh "playerctl previous"; }
+    XF86AudioNext allow-when-locked=true { spawn-sh "playerctl next"; }
 
-    XF86MonBrightnessUp   allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "+10%"; }
-    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "10%-"; }
+    XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "+5%"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "5%-"; }
 
     // ── Screenshots ────────────────────────────────────────────────────
     Print { screenshot; }

@@ -42,6 +42,47 @@ window#waybar {
     margin: 2px 1px;
 }
 
+tooltip {
+    background-color: rgba(40, 40, 40, 0.95);
+    color: #ebdbb2;
+    border: 1px solid #3c3836;
+    border-radius: 8px;
+}
+
+tooltip label {
+    color: #ebdbb2;
+}
+
+calendar {
+    color: #ebdbb2;
+    background-color: transparent;
+}
+
+calendar.header {
+    color: #d79921;
+    font-weight: bold;
+    border-bottom-color: #3c3836;
+}
+
+calendar.button {
+    color: #a89984;
+}
+
+calendar.button:hover {
+    color: #d79921;
+}
+
+calendar.highlight {
+    color: #d79921;
+    font-weight: bold;
+}
+
+calendar:selected {
+    background-color: #d79921;
+    color: #282828;
+    font-weight: bold;
+}
+
 #network {
     background-color: rgba(60, 56, 54, 0.85);
     color: #458588;

@@ -16,8 +16,7 @@
 
     "clock": {
         "format": " {:%I:%M %p  %Y-%m-%d}",
-        "tooltip-format": "<tt>{calendar}</tt>",
-        "on-click": "wlogout"
+        "on-click": "calendar-dropdown"
     },
 
     "network": {

@@ -1,0 +1,165 @@
+#!/usr/bin/env python3
+"""
+calendar-dropdown — layer-shell calendar dropdown for niri/waybar
+Uses GTK3 + gtk-layer-shell to create an instant dropdown calendar
+that appears below the waybar clock and closes on click-outside.
+Reads theme colors from the niri config to follow the global theme.
+
+Usage: calendar-dropdown
+Click outside or press Escape to close.
+"""
+import signal
+
+# Allow Ctrl+C to kill the script
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+import gi
+gi.require_version("Gtk", "3.0")
+gi.require_version("GtkLayerShell", "0.1")
+from gi.repository import Gtk, GtkLayerShell, Gdk, GLib
+import re
+import os
+
+def read_theme_colors():
+    """Read theme colors from the live niri config.kdl."""
+    config_path = os.path.expanduser("~/.config/niri/config.kdl")
+    colors = {
+        "accent": "#d79921",
+        "bg_alt": "#3c3836",
+        "bg": "#282828",
+        "bg_dark": "#1d2021",
+        "fg": "#ebdbb2",
+        "fg_dim": "#a89984",
+    }
+    try:
+        with open(config_path, "r") as f:
+            content = f.read()
+        # Extract colors from focus-ring and background-color
+        m = re.search(r'active-color\s+"(#[0-9a-fA-F]+)"', content)
+        if m:
+            colors["accent"] = m.group(1)
+        m = re.search(r'inactive-color\s+"(#[0-9a-fA-F]+)"', content)
+        if m:
+            colors["bg_alt"] = m.group(1)
+        m = re.search(r'background-color\s+"(#[0-9a-fA-F]+)"', content)
+        if m:
+            colors["bg_dark"] = m.group(1)
+        # Derive bg from bg_dark (slightly lighter) and fg from accent contrast
+        # We can also read the waybar CSS for fg color
+        waybar_css = os.path.expanduser("~/.config/waybar/style.css")
+        if os.path.exists(waybar_css):
+            with open(waybar_css, "r") as f:
+                css = f.read()
+            m = re.search(r'window#waybar\s*\{[^}]*color:\s*(#[0-9a-fA-F]+)', css)
+            if m:
+                colors["fg"] = m.group(1)
+            # Look for a dim/comment color in the workspaces button
+            m = re.search(r'#workspaces\s+button\s*\{[^}]*color:\s*(#[0-9a-fA-F]+)', css)
+            if m:
+                colors["fg_dim"] = m.group(1)
+    except Exception:
+        pass  # Fall back to gruvbox defaults
+    return colors
+
+def main():
+    t = read_theme_colors()
+
+    win = Gtk.Window()
+
+    # Enable layer-shell
+    GtkLayerShell.init_for_window(win)
+    GtkLayerShell.set_layer(win, GtkLayerShell.Layer.OVERLAY)
+    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.TOP, True)
+    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.LEFT, False)
+    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.RIGHT, False)
+    GtkLayerShell.set_exclusive_zone(win, -1)
+    GtkLayerShell.set_margin(win, GtkLayerShell.Edge.TOP, 32)
+
+    win.set_size_request(340, 360)
+
+    # Create calendar widget
+    cal = Gtk.Calendar()
+    cal.set_property("show-heading", True)
+    cal.set_property("show-day-names", True)
+    cal.set_property("show-week-numbers", True)
+
+    # Theme CSS — reads colors from niri config
+    css = f"""
+    window {{
+        background-color: {t['bg']};
+        border-radius: 10px;
+        border: 1px solid {t['bg_alt']};
+    }}
+    calendar {{
+        color: {t['fg']};
+        background-color: transparent;
+        padding: 8px;
+    }}
+    calendar header {{
+        color: {t['accent']};
+        font-weight: bold;
+    }}
+    calendar button {{
+        color: {t['fg_dim']};
+    }}
+    calendar button:hover {{
+        color: {t['accent']};
+    }}
+    calendar:selected {{
+        background-color: {t['accent']};
+        color: {t['bg']};
+        border-radius: 4px;
+    }}
+    calendar.day:selected {{
+        background-color: {t['accent']};
+        color: {t['bg']};
+    }}
+    calendar.highlight {{
+        color: {t['accent']};
+        font-weight: bold;
+    }}
+    """.encode()
+
+    provider = Gtk.CssProvider()
+    provider.load_from_data(css)
+    Gtk.StyleContext.add_provider_for_screen(
+        Gdk.Screen.get_default(), provider,
+        Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+    )
+
+    # Frame for border + rounded corners
+    frame = Gtk.Frame()
+    frame.set_shadow_type(Gtk.ShadowType.NONE)
+    frame.add(cal)
+    win.add(frame)
+
+    # Close on Escape
+    def on_key(widget, event):
+        if event.keyval == Gdk.KEY_Escape:
+            Gtk.main_quit()
+            return True
+        return False
+
+    win.connect("key-press-event", on_key)
+
+    # Keyboard interactivity for layer-shell
+    GtkLayerShell.set_keyboard_mode(win, GtkLayerShell.KeyboardMode.ON_DEMAND)
+
+    # Close on focus loss
+    def on_focus_out(widget, event):
+        Gtk.main_quit()
+        return False
+
+    win.connect("focus-out-event", on_focus_out)
+
+    # Close on double-click date
+    def on_day_selected(widget):
+        GLib.timeout_add(100, Gtk.main_quit)
+
+    cal.connect("day-selected-double-click", on_day_selected)
+
+    win.show_all()
+    Gtk.main()
+
+if __name__ == "__main__":
+    main()
