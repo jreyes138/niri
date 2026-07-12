@@ -40,12 +40,16 @@
     "pulseaudio": {
         "format": " {volume}%",
         "format-muted": " M",
-        "on-click": "pavucontrol"
+        "on-click": "pavucontrol",
+        "on-scroll-up": "",
+        "on-scroll-down": ""
     },
 
     "backlight": {
         "format": " {percent}%",
-        "device": "intel_backlight"
+        "device": "intel_backlight",
+        "on-scroll-up": "",
+        "on-scroll-down": ""
     },
 
     "battery": {
